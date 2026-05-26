@@ -1,0 +1,87 @@
+import os
+import psycopg2
+import psycopg2.extras
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+def get_conn():
+    conn = psycopg2.connect(DATABASE_URL)
+    return conn
+
+def init_db():
+    conn = get_conn()
+    c = conn.cursor()
+
+    c.execute('''CREATE TABLE IF NOT EXISTS ace_swepam (
+        time_tag TEXT PRIMARY KEY,
+        proton_density REAL, bulk_speed REAL,
+        ion_temp REAL, status INTEGER
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS ace_mag (
+        time_tag TEXT PRIMARY KEY,
+        bx REAL, by REAL, bz REAL, bt REAL,
+        lat REAL, lon REAL, status INTEGER
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS ace_epam (
+        time_tag TEXT PRIMARY KEY,
+        e38_53 REAL, e175_315 REAL,
+        p47_65 REAL, p112_187 REAL,
+        p310_580 REAL, p761_1220 REAL,
+        status INTEGER
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS ace_sis (
+        time_tag TEXT PRIMARY KEY,
+        p10 REAL, p30 REAL, status INTEGER
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS goes_xray (
+        time_tag TEXT PRIMARY KEY,
+        flux_long REAL, flux_short REAL, satellite INTEGER
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS goes_proton (
+        time_tag TEXT, energy TEXT, flux REAL, satellite INTEGER,
+        PRIMARY KEY (time_tag, energy)
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS goes_electron (
+        time_tag TEXT, energy TEXT, flux REAL, satellite INTEGER,
+        PRIMARY KEY (time_tag, energy)
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS goes_mag (
+        time_tag TEXT PRIMARY KEY,
+        hp REAL, he REAL, hn REAL, ht REAL, satellite INTEGER
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS goes_wind (
+        time_tag TEXT PRIMARY KEY,
+        density REAL, speed REAL, temperature REAL, satellite INTEGER
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS cosmic_neutron (
+        time_tag TEXT, station TEXT, count_rate REAL,
+        PRIMARY KEY (time_tag, station)
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS cosmic_maw (
+        time_tag TEXT PRIMARY KEY,
+        year INTEGER, doy INTEGER, hour INTEGER, minute INTEGER,
+        nm_corrected REAL, nm_uncorrected REAL, pressure REAL,
+        bare_corrected REAL, bare_uncorrected REAL,
+        tube_1 REAL, tube_2 REAL, tube_3 REAL, tube_4 REAL, tube_5 REAL, tube_6 REAL,
+        tube_7 REAL, tube_8 REAL, tube_9 REAL, tube_10 REAL, tube_11 REAL, tube_12 REAL,
+        tube_13 REAL, tube_14 REAL, tube_15 REAL, tube_16 REAL, tube_17 REAL, tube_18 REAL,
+        bare_1 REAL, bare_2 REAL, bare_3 REAL, bare_4 REAL, bare_5 REAL, bare_6 REAL,
+        corr_factor REAL, stat_error REAL, status_flag INTEGER
+    )''')
+
+    conn.commit()
+    conn.close()
+    print("✓ Supabase PostgreSQL initialized")
