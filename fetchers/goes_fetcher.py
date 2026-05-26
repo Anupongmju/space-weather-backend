@@ -1,5 +1,6 @@
 import httpx
 from database import get_conn
+from psycopg2.extras import execute_values
 
 BASE = "https://services.swpc.noaa.gov/json/goes/primary"
 
@@ -28,14 +29,11 @@ def fetch_xray():
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.executemany(
-        """INSERT INTO goes_xray (time_tag,flux_long,flux_short,satellite)
-           VALUES (%s,%s,%s,%s)
+    execute_values(cur, """INSERT INTO goes_xray (time_tag,flux_long,flux_short,satellite)
+           VALUES %s
            ON CONFLICT (time_tag) DO UPDATE SET
            flux_long=EXCLUDED.flux_long,
-           flux_short=EXCLUDED.flux_short""",
-        records
-    )
+           flux_short=EXCLUDED.flux_short""", records)
     conn.commit(); conn.close()
     return len(records)
 
@@ -47,13 +45,10 @@ def fetch_proton():
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.executemany(
-        """INSERT INTO goes_proton (time_tag,energy,flux,satellite)
-           VALUES (%s,%s,%s,%s)
+    execute_values(cur, """INSERT INTO goes_proton (time_tag,energy,flux,satellite)
+           VALUES %s
            ON CONFLICT (time_tag,energy) DO UPDATE SET
-           flux=EXCLUDED.flux""",
-        records
-    )
+           flux=EXCLUDED.flux""", records)
     conn.commit(); conn.close()
     return len(records)
 
@@ -65,13 +60,10 @@ def fetch_electron():
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.executemany(
-        """INSERT INTO goes_electron (time_tag,energy,flux,satellite)
-           VALUES (%s,%s,%s,%s)
+    execute_values(cur, """INSERT INTO goes_electron (time_tag,energy,flux,satellite)
+           VALUES %s
            ON CONFLICT (time_tag,energy) DO UPDATE SET
-           flux=EXCLUDED.flux""",
-        records
-    )
+           flux=EXCLUDED.flux""", records)
     conn.commit(); conn.close()
     return len(records)
 
@@ -88,41 +80,47 @@ def fetch_goes_mag():
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.executemany(
-        """INSERT INTO goes_mag (time_tag,hp,he,hn,ht,satellite)
-           VALUES (%s,%s,%s,%s,%s,%s)
+    execute_values(cur, """INSERT INTO goes_mag (time_tag,hp,he,hn,ht,satellite)
+           VALUES %s
            ON CONFLICT (time_tag) DO UPDATE SET
            hp=EXCLUDED.hp, he=EXCLUDED.he,
-           hn=EXCLUDED.hn, ht=EXCLUDED.ht""",
-        records
-    )
+           hn=EXCLUDED.hn, ht=EXCLUDED.ht""", records)
     conn.commit(); conn.close()
     return len(records)
 
 def fetch_goes_wind():
-    r = httpx.get(f"{BASE}/plasma-6-hour.json", timeout=30)
+    r = httpx.get("https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json", timeout=30)
+    if r.status_code == 404: return 0
     r.raise_for_status()
     data = r.json()
-    records = [(
-        d['time_tag'],
-        float(d.get('density',0) or 0),
-        float(d.get('speed',0) or 0),
-        float(d.get('temperature',0) or 0),
-        d.get('satellite',0)
-    ) for d in data]
+    if not data or len(data) < 2: return 0
+    
+    records = []
+    for row in data[1:]:
+        if len(row) < 4: continue
+        try:
+            time_tag = row[0].replace('.000', 'Z')
+            density = float(row[1]) if row[1] is not None else 0.0
+            speed = float(row[2]) if row[2] is not None else 0.0
+            temp = float(row[3]) if row[3] is not None else 0.0
+            records.append((time_tag, density, speed, temp, 0))
+        except: continue
+
+    if not records: return 0
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.executemany(
+    execute_values(
+        cur,
         """INSERT INTO goes_wind (time_tag,density,speed,temperature,satellite)
-           VALUES (%s,%s,%s,%s,%s)
+           VALUES %s
            ON CONFLICT (time_tag) DO UPDATE SET
-           density=EXCLUDED.density,
-           speed=EXCLUDED.speed,
+           density=EXCLUDED.density, speed=EXCLUDED.speed,
            temperature=EXCLUDED.temperature""",
         records
     )
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
     return len(records)
 
 def fetch_all_goes():

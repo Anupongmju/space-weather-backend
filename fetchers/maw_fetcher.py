@@ -3,6 +3,7 @@ import gzip
 import io
 from datetime import datetime, timedelta, timezone
 from database import get_conn
+from psycopg2.extras import execute_values
 
 BASE = "https://downloads.sws.bom.gov.au/wdc/wdc_cosray/data/MAW"
 
@@ -63,8 +64,9 @@ def fetch_maw_day(year: int, doy: int):
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.executemany(
-        f"""INSERT INTO cosmic_maw VALUES ({','.join(['%s']*37)})
+    execute_values(
+        cur,
+        """INSERT INTO cosmic_maw VALUES %s
             ON CONFLICT (time_tag) DO UPDATE SET
             nm_corrected=EXCLUDED.nm_corrected,
             nm_uncorrected=EXCLUDED.nm_uncorrected,

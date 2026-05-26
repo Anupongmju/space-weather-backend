@@ -1,44 +1,38 @@
 import httpx
 from datetime import datetime, timedelta, timezone
 from database import get_conn
+from psycopg2.extras import execute_values
 
 STATIONS = ['OULU','KIEL2','JUNG1','THUL','MOSC']
 
 def fetch_neutron(station='OULU', hours=24):
-    end   = datetime.now(timezone.utc)
-    start = end - timedelta(hours=hours)
-    fmt   = lambda d: d.strftime('%Y-%m-%d%%20%H:%M')
-
-    url = (
-        f"https://www.nmdb.eu/nest/draw_graph.php"
-        f"?stations[]={station}&tabchoice=revori"
-        f"&dtype=corr_for_efficiency&tresolution=60"
-        f"&startdate={fmt(start)}&enddate={fmt(end)}&output=ascii"
-    )
-
-    r = httpx.get(url, timeout=60)
+    url = "https://www.nmdb.eu/rt/realtime.txt"
+    r = httpx.get(url, timeout=30)
     r.raise_for_status()
 
     records = []
     for line in r.text.split('\n'):
-        if ';' not in line or line.startswith('#'): continue
+        if not line or line.startswith('#'): continue
         parts = line.strip().split(';')
-        if len(parts) < 2: continue
+        if len(parts) < 3: continue
+        
         try:
-            time_tag   = parts[0].strip()
-            count_rate = float(parts[1].strip())
+            time_tag = parts[0].strip()
+            st = parts[1].strip()
+            if st != station: continue
+            
+            count_rate = float(parts[2].strip())
             records.append((time_tag, station, count_rate))
         except: continue
 
+    if not records: return 0
+
     conn = get_conn()
     cur = conn.cursor()
-    cur.executemany(
-        """INSERT INTO cosmic_neutron (time_tag,station,count_rate)
-           VALUES (%s,%s,%s)
+    execute_values(cur, """INSERT INTO cosmic_neutron (time_tag,station,count_rate)
+           VALUES %s
            ON CONFLICT (time_tag,station) DO UPDATE SET
-           count_rate=EXCLUDED.count_rate""",
-        records
-    )
+           count_rate=EXCLUDED.count_rate""", records)
     conn.commit(); conn.close()
     return len(records)
 
