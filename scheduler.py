@@ -24,7 +24,7 @@ def cleanup_old_data():
         print(f"[Scheduler] Cleanup Error: {e}")
 
 def ping_self():
-    url = os.getenv("RENDER_URL", "")
+    url = os.getenv("RENDER_EXTERNAL_URL", "")
     if not url: return
     try:
         httpx.get(f"{url}/", timeout=10)
