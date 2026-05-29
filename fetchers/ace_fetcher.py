@@ -9,8 +9,12 @@ def parse_ace_text(text):
     return [l.split() for l in lines]
 
 def fetch_swepam():
-    r = httpx.get(f"{BASE}/ace-swepam.txt", timeout=30)
-    r.raise_for_status()
+    try:
+        r = httpx.get(f"{BASE}/ace-swepam.txt", timeout=30)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"Error fetching ACE swepam: {e}")
+        return 0
     rows = parse_ace_text(r.text)
     records = []
     for c in rows:
@@ -35,8 +39,12 @@ def fetch_swepam():
     return len(records)
 
 def fetch_mag():
-    r = httpx.get(f"{BASE}/ace-magnetometer.txt", timeout=30)
-    r.raise_for_status()
+    try:
+        r = httpx.get(f"{BASE}/ace-magnetometer.txt", timeout=30)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"Error fetching ACE mag: {e}")
+        return 0
     rows = parse_ace_text(r.text)
     records = []
     for c in rows:
@@ -62,8 +70,12 @@ def fetch_mag():
     return len(records)
 
 def fetch_epam():
-    r = httpx.get(f"{BASE}/ace-epam.txt", timeout=30)
-    r.raise_for_status()
+    try:
+        r = httpx.get(f"{BASE}/ace-epam.txt", timeout=30)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"Error fetching ACE epam: {e}")
+        return 0
     rows = parse_ace_text(r.text)
     records = []
     for c in rows:
@@ -88,8 +100,12 @@ def fetch_epam():
     return len(records)
 
 def fetch_sis():
-    r = httpx.get(f"{BASE}/ace-sis.txt", timeout=30)
-    r.raise_for_status()
+    try:
+        r = httpx.get(f"{BASE}/ace-sis.txt", timeout=30)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"Error fetching ACE sis: {e}")
+        return 0
     rows = parse_ace_text(r.text)
     records = []
     for c in rows:
