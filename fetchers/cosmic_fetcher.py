@@ -19,10 +19,10 @@ def fetch_neutron(station='OULU', hours=24):
         try:
             time_tag = parts[0].strip()
             st = parts[1].strip()
-            if st != station: continue
+            if station != 'ALL' and st != station: continue
             
             count_rate = float(parts[2].strip())
-            records.append((time_tag, station, count_rate))
+            records.append((time_tag, st, count_rate))
         except: continue
 
     if not records: return 0
@@ -37,4 +37,4 @@ def fetch_neutron(station='OULU', hours=24):
     return len(records)
 
 def fetch_all_cosmic():
-    return {"neutron_oulu": fetch_neutron('OULU', 24)}
+    return {"neutron_all": fetch_neutron('ALL')}
