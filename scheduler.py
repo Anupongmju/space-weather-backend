@@ -54,26 +54,18 @@ def start_scheduler():
             ping_self()
             time.sleep(5 * 60)  # ทุก 5 นาที
 
-    # ── Thread 2: MAW ทุกวัน 02:00 UTC ────────────────────────────────────
+    # ── Thread 2: MAW ทุก 1 ชั่วโมง ────────────────────────────────────
     def maw_job():
         while True:
-            now = datetime.now(timezone.utc)
-            next_run = now.replace(hour=2, minute=0, second=0, microsecond=0)
-            if next_run <= now:
-                next_run += timedelta(days=1)
-
-            wait_sec = (next_run - now).total_seconds()
-            print(f"[Scheduler] Next MAW fetch in {wait_sec/3600:.1f} hrs at {next_run.strftime('%Y-%m-%d %H:%M')} UTC")
-
-            cleanup_old_data()
-            time.sleep(wait_sec)
-
             try:
-                from fetchers.maw_fetcher import fetch_maw_today
-                result = fetch_maw_today()
-                print(f"[Scheduler] MAW auto-fetch: {result}")
+                from fetchers.maw_fetcher import fetch_maw_range
+                result = fetch_maw_range(days=3)
+                print(f"[Scheduler] MAW auto-fetch (3 days): {len(result)} days processed")
             except Exception as e:
                 print(f"[Scheduler] MAW Error: {e}")
+
+            cleanup_old_data()
+            time.sleep(3600)
 
     # รัน 2 threads พร้อมกัน
     t1 = threading.Thread(target=realtime_job, daemon=True)
