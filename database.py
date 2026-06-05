@@ -1,14 +1,37 @@
 import os
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
+from psycopg2.extensions import connection as PsyConnection
 from dotenv import load_dotenv
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+class PooledConnection(PsyConnection):
+    def close(self):
+        if hasattr(self, '_pool') and self._pool:
+            pool = self._pool
+            self._pool = None
+            pool.putconn(self)
+        else:
+            super().close()
+
+_pool = None
+
+def get_pool():
+    global _pool
+    if _pool is None:
+        _pool = psycopg2.pool.ThreadedConnectionPool(
+            2, 15, DATABASE_URL, connection_factory=PooledConnection
+        )
+    return _pool
+
 def get_conn():
-    conn = psycopg2.connect(DATABASE_URL)
+    pool = get_pool()
+    conn = pool.getconn()
+    conn._pool = pool
     return conn
 
 def init_db():
@@ -93,4 +116,4 @@ def init_db():
 
     conn.commit()
     conn.close()
-    print("✓ Supabase PostgreSQL initialized")
+    print("[OK] Supabase PostgreSQL initialized")

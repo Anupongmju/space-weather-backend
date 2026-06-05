@@ -28,12 +28,15 @@ def fetch_neutron(station='OULU', hours=24):
     if not records: return 0
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(cur, """INSERT INTO cosmic_neutron (time_tag,station,count_rate)
-           VALUES %s
-           ON CONFLICT (time_tag,station) DO UPDATE SET
-           count_rate=EXCLUDED.count_rate""", records)
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(cur, """INSERT INTO cosmic_neutron (time_tag,station,count_rate)
+               VALUES %s
+               ON CONFLICT (time_tag,station) DO UPDATE SET
+               count_rate=EXCLUDED.count_rate""", records)
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_all_cosmic():

@@ -28,14 +28,17 @@ def fetch_swepam():
         except: continue
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(cur, """INSERT INTO ace_swepam (time_tag,proton_density,bulk_speed,ion_temp,status)
-           VALUES %s
-           ON CONFLICT (time_tag) DO UPDATE SET
-           proton_density=EXCLUDED.proton_density,
-           bulk_speed=EXCLUDED.bulk_speed,
-           ion_temp=EXCLUDED.ion_temp""", records)
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(cur, """INSERT INTO ace_swepam (time_tag,proton_density,bulk_speed,ion_temp,status)
+               VALUES %s
+               ON CONFLICT (time_tag) DO UPDATE SET
+               proton_density=EXCLUDED.proton_density,
+               bulk_speed=EXCLUDED.bulk_speed,
+               ion_temp=EXCLUDED.ion_temp""", records)
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_mag():
@@ -60,13 +63,16 @@ def fetch_mag():
         except: continue
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(cur, """INSERT INTO ace_mag (time_tag,bx,by,bz,bt,lat,lon,status)
-           VALUES %s
-           ON CONFLICT (time_tag) DO UPDATE SET
-           bx=EXCLUDED.bx, by=EXCLUDED.by,
-           bz=EXCLUDED.bz, bt=EXCLUDED.bt""", records)
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(cur, """INSERT INTO ace_mag (time_tag,bx,by,bz,bt,lat,lon,status)
+               VALUES %s
+               ON CONFLICT (time_tag) DO UPDATE SET
+               bx=EXCLUDED.bx, by=EXCLUDED.by,
+               bz=EXCLUDED.bz, bt=EXCLUDED.bt""", records)
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_epam():
@@ -91,12 +97,15 @@ def fetch_epam():
         except: continue
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(cur, """INSERT INTO ace_epam (time_tag,e38_53,e175_315,p47_65,p112_187,p310_580,p761_1220,status)
-           VALUES %s
-           ON CONFLICT (time_tag) DO UPDATE SET
-           e38_53=EXCLUDED.e38_53, e175_315=EXCLUDED.e175_315""", records)
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(cur, """INSERT INTO ace_epam (time_tag,e38_53,e175_315,p47_65,p112_187,p310_580,p761_1220,status)
+               VALUES %s
+               ON CONFLICT (time_tag) DO UPDATE SET
+               e38_53=EXCLUDED.e38_53, e175_315=EXCLUDED.e175_315""", records)
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_sis():
@@ -119,12 +128,15 @@ def fetch_sis():
         except: continue
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(cur, """INSERT INTO ace_sis (time_tag,p10,p30,status)
-           VALUES %s
-           ON CONFLICT (time_tag) DO UPDATE SET
-           p10=EXCLUDED.p10, p30=EXCLUDED.p30""", records)
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(cur, """INSERT INTO ace_sis (time_tag,p10,p30,status)
+               VALUES %s
+               ON CONFLICT (time_tag) DO UPDATE SET
+               p10=EXCLUDED.p10, p30=EXCLUDED.p30""", records)
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_all_ace():

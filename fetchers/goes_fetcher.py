@@ -28,13 +28,16 @@ def fetch_xray():
         records.append((t, fl, fs, sat))
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(cur, """INSERT INTO goes_xray (time_tag,flux_long,flux_short,satellite)
-           VALUES %s
-           ON CONFLICT (time_tag) DO UPDATE SET
-           flux_long=EXCLUDED.flux_long,
-           flux_short=EXCLUDED.flux_short""", records)
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(cur, """INSERT INTO goes_xray (time_tag,flux_long,flux_short,satellite)
+               VALUES %s
+               ON CONFLICT (time_tag) DO UPDATE SET
+               flux_long=EXCLUDED.flux_long,
+               flux_short=EXCLUDED.flux_short""", records)
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_proton():
@@ -44,12 +47,15 @@ def fetch_proton():
     records = [(d['time_tag'], d.get('energy',''), float(d.get('flux',0) or 0), d.get('satellite',0)) for d in data]
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(cur, """INSERT INTO goes_proton (time_tag,energy,flux,satellite)
-           VALUES %s
-           ON CONFLICT (time_tag,energy) DO UPDATE SET
-           flux=EXCLUDED.flux""", records)
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(cur, """INSERT INTO goes_proton (time_tag,energy,flux,satellite)
+               VALUES %s
+               ON CONFLICT (time_tag,energy) DO UPDATE SET
+               flux=EXCLUDED.flux""", records)
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_electron():
@@ -59,12 +65,15 @@ def fetch_electron():
     records = [(d['time_tag'], d.get('energy',''), float(d.get('flux',0) or 0), d.get('satellite',0)) for d in data]
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(cur, """INSERT INTO goes_electron (time_tag,energy,flux,satellite)
-           VALUES %s
-           ON CONFLICT (time_tag,energy) DO UPDATE SET
-           flux=EXCLUDED.flux""", records)
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(cur, """INSERT INTO goes_electron (time_tag,energy,flux,satellite)
+               VALUES %s
+               ON CONFLICT (time_tag,energy) DO UPDATE SET
+               flux=EXCLUDED.flux""", records)
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_goes_mag():
@@ -79,13 +88,16 @@ def fetch_goes_mag():
     ) for d in data]
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(cur, """INSERT INTO goes_mag (time_tag,hp,he,hn,ht,satellite)
-           VALUES %s
-           ON CONFLICT (time_tag) DO UPDATE SET
-           hp=EXCLUDED.hp, he=EXCLUDED.he,
-           hn=EXCLUDED.hn, ht=EXCLUDED.ht""", records)
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(cur, """INSERT INTO goes_mag (time_tag,hp,he,hn,ht,satellite)
+               VALUES %s
+               ON CONFLICT (time_tag) DO UPDATE SET
+               hp=EXCLUDED.hp, he=EXCLUDED.he,
+               hn=EXCLUDED.hn, ht=EXCLUDED.ht""", records)
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_goes_wind():
@@ -109,18 +121,20 @@ def fetch_goes_wind():
     if not records: return 0
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(
-        cur,
-        """INSERT INTO goes_wind (time_tag,density,speed,temperature,satellite)
-           VALUES %s
-           ON CONFLICT (time_tag) DO UPDATE SET
-           density=EXCLUDED.density, speed=EXCLUDED.speed,
-           temperature=EXCLUDED.temperature""",
-        records
-    )
-    conn.commit()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(
+            cur,
+            """INSERT INTO goes_wind (time_tag,density,speed,temperature,satellite)
+               VALUES %s
+               ON CONFLICT (time_tag) DO UPDATE SET
+               density=EXCLUDED.density, speed=EXCLUDED.speed,
+               temperature=EXCLUDED.temperature""",
+            records
+        )
+        conn.commit()
+    finally:
+        conn.close()
     return len(records)
 
 def fetch_all_goes():

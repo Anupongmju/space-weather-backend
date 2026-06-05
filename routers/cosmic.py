@@ -7,11 +7,13 @@ router = APIRouter(prefix="/cosmic", tags=["Cosmic"])
 
 def query(sql, params=()):
     conn = get_conn()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute(sql, params)
-    rows = cur.fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
 
 @router.post("/fetch")
 def fetch_all(): return fetch_all_cosmic()

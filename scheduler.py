@@ -6,7 +6,9 @@ from datetime import datetime, timezone, timedelta
 from database import get_conn
 
 def cleanup_old_data():
+    conn = None
     try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).strftime('%Y-%m-%d %H:%M:%SZ')
         conn = get_conn()
         cur = conn.cursor()
         tables = ['ace_swepam','ace_mag','ace_epam','ace_sis',
@@ -15,13 +17,15 @@ def cleanup_old_data():
         for table in tables:
             cur.execute(f"""
                 DELETE FROM {table}
-                WHERE time_tag < NOW() - INTERVAL '90 days'
-            """)
+                WHERE time_tag < %s
+            """, (cutoff,))
         conn.commit()
-        conn.close()
         print("[Scheduler] Cleanup old data complete.")
     except Exception as e:
         print(f"[Scheduler] Cleanup Error: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 def ping_self():
     url = os.getenv("RENDER_EXTERNAL_URL", "")

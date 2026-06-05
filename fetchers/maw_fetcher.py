@@ -63,17 +63,20 @@ def fetch_maw_day(year: int, doy: int):
         return 0, "no records parsed"
 
     conn = get_conn()
-    cur = conn.cursor()
-    execute_values(
-        cur,
-        """INSERT INTO cosmic_maw VALUES %s
-            ON CONFLICT (time_tag) DO UPDATE SET
-            nm_corrected=EXCLUDED.nm_corrected,
-            nm_uncorrected=EXCLUDED.nm_uncorrected,
-            pressure=EXCLUDED.pressure""",
-        records
-    )
-    conn.commit(); conn.close()
+    try:
+        cur = conn.cursor()
+        execute_values(
+            cur,
+            """INSERT INTO cosmic_maw VALUES %s
+                ON CONFLICT (time_tag) DO UPDATE SET
+                nm_corrected=EXCLUDED.nm_corrected,
+                nm_uncorrected=EXCLUDED.nm_uncorrected,
+                pressure=EXCLUDED.pressure""",
+            records
+        )
+        conn.commit()
+    finally:
+        conn.close()
     return len(records), None
 
 def fetch_maw_today():
