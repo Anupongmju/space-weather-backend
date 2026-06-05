@@ -14,6 +14,7 @@ class NewsCreate(BaseModel):
     content: str
     image_url: Optional[str] = None
     author: Optional[str] = "Admin"
+    canva_url: Optional[str] = None
 
 def verify_admin(x_admin_password: Optional[str] = Header(None)):
     if not x_admin_password or x_admin_password != ADMIN_PASSWORD:
@@ -40,13 +41,20 @@ def query_db(sql, params=(), is_write=False):
 def get_all_news():
     return query_db("SELECT * FROM news ORDER BY published_at DESC")
 
+@router.get("/{news_id}")
+def get_news_by_id(news_id: int):
+    rows = query_db("SELECT * FROM news WHERE id = %s", (news_id,))
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=404, detail="News article not found")
+    return rows[0]
+
 @router.post("", dependencies=[Depends(verify_admin)])
 def create_news(news: NewsCreate):
     sql = """
-    INSERT INTO news (title, content, image_url, author)
-    VALUES (%s, %s, %s, %s)
+    INSERT INTO news (title, content, image_url, author, canva_url)
+    VALUES (%s, %s, %s, %s, %s)
     """
-    query_db(sql, (news.title, news.content, news.image_url, news.author), is_write=True)
+    query_db(sql, (news.title, news.content, news.image_url, news.author, news.canva_url), is_write=True)
     return {"status": "ok", "message": "News article published successfully"}
 
 @router.delete("/{news_id}", dependencies=[Depends(verify_admin)])

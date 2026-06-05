@@ -111,7 +111,8 @@ def init_db():
         content TEXT NOT NULL,
         image_url TEXT,
         author TEXT DEFAULT 'Admin',
-        published_at TIMESTAMPTZ DEFAULT NOW()
+        published_at TIMESTAMPTZ DEFAULT NOW(),
+        canva_url TEXT
     )''')
 
     conn.commit()
