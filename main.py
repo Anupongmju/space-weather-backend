@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
-from routers import ace, goes, cosmic,maw
+from routers import ace, goes, cosmic, maw, news
 from scheduler import start_scheduler
 
 @asynccontextmanager
@@ -24,6 +24,7 @@ app.include_router(ace.router)
 app.include_router(goes.router)
 app.include_router(cosmic.router)
 app.include_router(maw.router)
+app.include_router(news.router)
 
 @app.get("/")
 def root():

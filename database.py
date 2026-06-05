@@ -82,6 +82,15 @@ def init_db():
         corr_factor REAL, stat_error REAL, status_flag INTEGER
     )''')
 
+    c.execute('''CREATE TABLE IF NOT EXISTS news (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        image_url TEXT,
+        author TEXT DEFAULT 'Admin',
+        published_at TIMESTAMPTZ DEFAULT NOW()
+    )''')
+
     conn.commit()
     conn.close()
     print("✓ Supabase PostgreSQL initialized")
