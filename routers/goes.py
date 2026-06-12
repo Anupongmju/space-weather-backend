@@ -38,20 +38,60 @@ def route_fetch_wind(): return fetch_goes_wind()
 
 @router.get("/xray")
 def get_xray(limit: int = 1440):
-    return query("SELECT * FROM goes_xray ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    return query(
+        """SELECT * FROM goes_xray 
+           WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM goes_xray) - (%s || ' minutes')::INTERVAL
+           ORDER BY time_tag ASC""",
+        (limit,)
+    )
 
 @router.get("/proton")
 def get_proton(limit: int = 1440):
-    return query("SELECT * FROM goes_proton ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    return query(
+        """SELECT * FROM goes_proton 
+           WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM goes_proton) - (%s || ' minutes')::INTERVAL
+           ORDER BY time_tag ASC""",
+        (limit,)
+    )
 
 @router.get("/electron")
 def get_electron(limit: int = 1440):
-    return query("SELECT * FROM goes_electron ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    return query(
+        """SELECT * FROM goes_electron 
+           WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM goes_electron) - (%s || ' minutes')::INTERVAL
+           ORDER BY time_tag ASC""",
+        (limit,)
+    )
 
 @router.get("/mag")
 def get_mag(limit: int = 1440):
-    return query("SELECT * FROM goes_mag ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    return query(
+        """SELECT * FROM goes_mag 
+           WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM goes_mag) - (%s || ' minutes')::INTERVAL
+           ORDER BY time_tag ASC""",
+        (limit,)
+    )
 
 @router.get("/wind")
 def get_wind(limit: int = 1440):
-    return query("SELECT * FROM goes_wind ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    return query(
+        """SELECT * FROM goes_wind 
+           WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM goes_wind) - (%s || ' minutes')::INTERVAL
+           ORDER BY time_tag ASC""",
+        (limit,)
+    )
+
+@router.get("/suvi-loop/{wavelength}")
+def get_suvi_loop(wavelength: str, limit: int = 40):
+    import httpx
+    url = f"https://services.swpc.noaa.gov/products/animations/suvi-primary-{wavelength}.json"
+    try:
+        r = httpx.get(url, timeout=10.0)
+        if r.status_code != 200:
+            return {"urls": [], "error": f"NOAA returned status code {r.status_code}"}
+        data = r.json()
+        # Extract and format the URLs
+        urls = [f"https://services.swpc.noaa.gov{item['url']}" for item in data[-limit:]]
+        return {"urls": urls}
+    except Exception as e:
+        return {"urls": [], "error": str(e)}

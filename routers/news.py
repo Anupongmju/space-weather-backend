@@ -62,3 +62,17 @@ def delete_news(news_id: int):
     sql = "DELETE FROM news WHERE id = %s"
     query_db(sql, (news_id,), is_write=True)
     return {"status": "ok", "message": "News article deleted successfully"}
+
+@router.put("/{news_id}", dependencies=[Depends(verify_admin)])
+def update_news(news_id: int, news: NewsCreate):
+    rows = query_db("SELECT * FROM news WHERE id = %s", (news_id,))
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=404, detail="News article not found")
+    
+    sql = """
+    UPDATE news
+    SET title = %s, content = %s, image_url = %s, author = %s, canva_url = %s
+    WHERE id = %s
+    """
+    query_db(sql, (news.title, news.content, news.image_url, news.author, news.canva_url, news_id), is_write=True)
+    return {"status": "ok", "message": "News article updated successfully"}

@@ -28,7 +28,12 @@ def fetch_specific(year: int, doy: int):
 
 @router.get("/data")
 def get_data(limit: int = 1440):
-    return query("SELECT * FROM cosmic_maw ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    sql = """
+        SELECT * FROM cosmic_maw 
+        WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM cosmic_maw) - (%s || ' minutes')::INTERVAL
+        ORDER BY time_tag ASC
+    """
+    return query(sql, (limit,))
 
 @router.get("/data/range")
 def get_data_range(start: str, end: str):
@@ -50,9 +55,11 @@ def get_dates():
 
 @router.get("/scatter")
 def get_scatter(limit: int = 1440):
-    return query(
-        """SELECT time_tag, pressure, nm_uncorrected, nm_corrected
-           FROM cosmic_maw WHERE pressure > 0 AND nm_uncorrected > 0
-           ORDER BY time_tag DESC LIMIT %s""",
-        (limit,)
-    )
+    sql = """
+        SELECT time_tag, pressure, nm_uncorrected, nm_corrected
+        FROM cosmic_maw 
+        WHERE pressure > 0 AND nm_uncorrected > 0
+          AND time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM cosmic_maw) - (%s || ' minutes')::INTERVAL
+        ORDER BY time_tag ASC
+    """
+    return query(sql, (limit,))

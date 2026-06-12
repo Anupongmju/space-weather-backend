@@ -1,13 +1,42 @@
 import httpx
+import time
 from database import get_conn
-from psycopg2.extras import execute_values
+from psycopg2.extras import execute_values  # type: ignore
 
 BASE = "https://services.swpc.noaa.gov/json/goes/primary"
 
+def safe_http_get(filename_7day, filename_3day, filename_6hr):
+    """Tries to fetch the 7-day JSON file. If it fails, falls back to 3-day, then 6-hour, with retries."""
+    urls = [
+        (f"{BASE}/{filename_7day}", "7-day"),
+        (f"{BASE}/{filename_3day}", "3-day"),
+        (f"{BASE}/{filename_6hr}", "6-hour")
+    ]
+    
+    last_error = None
+    for url, desc in urls:
+        for attempt in range(3):
+            try:
+                print(f"[GOES Fetcher] Fetching {desc} data (attempt {attempt+1}/3)...")
+                r = httpx.get(url, timeout=30)
+                r.raise_for_status()
+                data = r.json()
+                print(f"[GOES Fetcher] Successfully fetched {desc} data.")
+                return data
+            except Exception as e:
+                last_error = e
+                print(f"[GOES Fetcher] Failed to fetch {desc} data (attempt {attempt+1}/3): {e}")
+                time.sleep(1)
+        print(f"[GOES Fetcher] {desc} data failed. Falling back...")
+        
+    raise Exception(f"All fallbacks failed for GOES fetch. Last error: {last_error}")
+
 def fetch_xray():
-    r = httpx.get(f"{BASE}/xrays-6-hour.json", timeout=30)
-    r.raise_for_status()
-    data = r.json()
+    try:
+        data = safe_http_get("xrays-7-day.json", "xrays-3-day.json", "xrays-6-hour.json")
+    except Exception as e:
+        print(f"Error fetching GOES xray: {e}")
+        return 0
 
     long_map, short_map = {}, {}
     for d in data:
@@ -41,9 +70,12 @@ def fetch_xray():
     return len(records)
 
 def fetch_proton():
-    r = httpx.get(f"{BASE}/integral-protons-6-hour.json", timeout=30)
-    r.raise_for_status()
-    data = r.json()
+    try:
+        data = safe_http_get("integral-protons-7-day.json", "integral-protons-3-day.json", "integral-protons-6-hour.json")
+    except Exception as e:
+        print(f"Error fetching GOES proton: {e}")
+        return 0
+
     records = [(d['time_tag'], d.get('energy',''), float(d.get('flux',0) or 0), d.get('satellite',0)) for d in data]
 
     conn = get_conn()
@@ -59,9 +91,12 @@ def fetch_proton():
     return len(records)
 
 def fetch_electron():
-    r = httpx.get(f"{BASE}/integral-electrons-6-hour.json", timeout=30)
-    r.raise_for_status()
-    data = r.json()
+    try:
+        data = safe_http_get("integral-electrons-7-day.json", "integral-electrons-3-day.json", "integral-electrons-6-hour.json")
+    except Exception as e:
+        print(f"Error fetching GOES electron: {e}")
+        return 0
+
     records = [(d['time_tag'], d.get('energy',''), float(d.get('flux',0) or 0), d.get('satellite',0)) for d in data]
 
     conn = get_conn()
@@ -77,9 +112,12 @@ def fetch_electron():
     return len(records)
 
 def fetch_goes_mag():
-    r = httpx.get(f"{BASE}/magnetometers-6-hour.json", timeout=30)
-    r.raise_for_status()
-    data = r.json()
+    try:
+        data = safe_http_get("magnetometers-7-day.json", "magnetometers-3-day.json", "magnetometers-6-hour.json")
+    except Exception as e:
+        print(f"Error fetching GOES mag: {e}")
+        return 0
+
     records = [(
         d['time_tag'],
         float(d.get('Hp',0) or 0), float(d.get('He',0) or 0),
@@ -101,10 +139,15 @@ def fetch_goes_mag():
     return len(records)
 
 def fetch_goes_wind():
-    r = httpx.get("https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json", timeout=30)
-    if r.status_code == 404: return 0
-    r.raise_for_status()
-    data = r.json()
+    try:
+        r = httpx.get("https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json", timeout=30)
+        if r.status_code == 404: return 0
+        r.raise_for_status()
+        data = r.json()
+    except Exception as e:
+        print(f"Error fetching GOES wind: {e}")
+        return 0
+
     if not data or len(data) < 2: return 0
     
     records = []

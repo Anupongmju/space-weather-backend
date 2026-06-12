@@ -32,16 +32,36 @@ def fetch_si(): return {"rows": fetch_sis()}
 
 @router.get("/swepam")
 def get_swepam(limit: int = 1440):
-    return query("SELECT * FROM ace_swepam ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    return query(
+        """SELECT * FROM ace_swepam 
+           WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM ace_swepam) - (%s || ' minutes')::INTERVAL
+           ORDER BY time_tag ASC""",
+        (limit,)
+    )
 
 @router.get("/mag")
 def get_mag(limit: int = 1440):
-    return query("SELECT * FROM ace_mag ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    return query(
+        """SELECT * FROM ace_mag 
+           WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM ace_mag) - (%s || ' minutes')::INTERVAL
+           ORDER BY time_tag ASC""",
+        (limit,)
+    )
 
 @router.get("/epam")
 def get_epam(limit: int = 1440):
-    return query("SELECT * FROM ace_epam ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    return query(
+        """SELECT * FROM ace_epam 
+           WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM ace_epam) - (%s || ' minutes')::INTERVAL
+           ORDER BY time_tag ASC""",
+        (limit,)
+    )
 
 @router.get("/sis")
 def get_sis(limit: int = 1440):
-    return query("SELECT * FROM ace_sis ORDER BY time_tag DESC LIMIT %s", (limit,))[::-1]
+    return query(
+        """SELECT * FROM ace_sis 
+           WHERE time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM ace_sis) - (%s || ' minutes')::INTERVAL
+           ORDER BY time_tag ASC""",
+        (limit,)
+    )

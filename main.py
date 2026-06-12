@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.docs import get_swagger_ui_html
 from database import init_db
 from routers import ace, goes, cosmic, maw, news
 from scheduler import start_scheduler
@@ -11,7 +13,20 @@ async def lifespan(app: FastAPI):
     start_scheduler()
     yield
 
-app = FastAPI(title="Space Weather API", version="1.0", lifespan=lifespan)
+app = FastAPI(title="Space Weather API", version="1.0", lifespan=lifespan, docs_url=None, redoc_url=None)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url or "/openapi.json",
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="/static/swagger-ui/swagger-ui-bundle.js",
+        swagger_css_url="/static/swagger-ui/swagger-ui.css",
+        swagger_favicon_url="/static/swagger-ui/favicon-32x32.png",
+    )
 
 app.add_middleware(
     CORSMiddleware,

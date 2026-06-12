@@ -24,7 +24,10 @@ def fetch_station(station: str, hours: int = 24):
 
 @router.get("/neutron")
 def get_neutron(station: str = "OULU", limit: int = 1440):
-    return query(
-        "SELECT * FROM cosmic_neutron WHERE station=%s ORDER BY time_tag DESC LIMIT %s",
-        (station, limit)
-    )[::-1]
+    sql = """
+        SELECT * FROM cosmic_neutron 
+        WHERE station=%s 
+          AND time_tag::TIMESTAMP >= (SELECT MAX(time_tag)::TIMESTAMP FROM cosmic_neutron WHERE station=%s) - (%s || ' minutes')::INTERVAL
+        ORDER BY time_tag ASC
+    """
+    return query(sql, (station, station, limit))
